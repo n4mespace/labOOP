@@ -1,3 +1,5 @@
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
 /**
@@ -9,7 +11,7 @@ interface Carriege extends Comparable<Carriege> {
 
     int baggageCount();
 
-    int getId();
+    String getId();
 
     int comfortCount();
 
@@ -17,7 +19,7 @@ interface Carriege extends Comparable<Carriege> {
     int compareTo(Carriege o);
 }
 
-interface GrasslandTransport {
+interface GrasslandTransport extends Comparable<GrasslandTransport> {
     int getTotalPeopleCount();
 
     int getTotalBaggageCount();
@@ -32,11 +34,11 @@ class Wagon implements Carriege {
     private int people;     // FROM 0 TO 54
     private int baggageAll; // FROM 0 TO 36 kg per one
     private int comfort;    // FROM 0 TO 10
-    private int id;         // Default number of wagon
+    private String id;      // Default name of wagon
 
-    Wagon(int people, int baggagePerOne) { this(people, baggagePerOne, 6, 1); }
+    Wagon(int people, int baggagePerOne) { this(people, baggagePerOne, 6, "New"); }
 
-    Wagon(int people, int baggagePerOne, int comfort, int id) {
+    Wagon(int people, int baggagePerOne, int comfort, String id) {
         if ( people > 0 && people < 55 &&
                 baggagePerOne > 0 && baggagePerOne < 37 &&
                 comfort > 0 && comfort < 11) {
@@ -67,11 +69,26 @@ class Wagon implements Carriege {
     public int comfortCount() { return comfort; }
 
     @Override
-    public int getId() { return id; }
+    public String getId() { return id; }
 
     @Override
     public int compareTo(Carriege o) {
-        return Integer.compare(o.comfortCount(), comfort);
+        return Integer.compare(o.hashCode(), hashCode());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Wagon)) return false;
+        Wagon wagon = (Wagon) o;
+        return people == wagon.people &&
+                baggageAll == wagon.baggageAll &&
+                comfort == wagon.comfort;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(people, baggageAll, comfort);
     }
 }
 
@@ -120,6 +137,29 @@ class Train implements GrasslandTransport {
                 + "\nbaggage : " + totalBaggage
                 + "\nwagons : " + wagons.length + '\n';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Train)) return false;
+        Train train = (Train) o;
+        return totalBaggage == train.totalBaggage &&
+                totalPeople == train.totalPeople &&
+                Arrays.equals(wagons, train.wagons);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(totalBaggage, totalPeople);
+        for (Wagon wagon : wagons)
+            result += wagon.hashCode();
+        return result;
+    }
+
+    @Override
+    public int compareTo(@NotNull GrasslandTransport o) {
+        return Integer.compare(this.hashCode(), o.hashCode());
+    }
 }
 
 class PassengerTrain extends Train {
@@ -136,37 +176,37 @@ class InterCityTrain extends Train {
 
 class PTWagon extends Wagon {
     PTWagon(int people, int baggagePerOne) { super(people, baggagePerOne); }
-    PTWagon(int people, int baggagePerOne, int comfort, int id) { super(people, baggagePerOne, comfort, id); }
+    PTWagon(int people, int baggagePerOne, int comfort, String id) { super(people, baggagePerOne, comfort, id); }
 }
 
 class HSWagon extends Wagon {
     HSWagon(int people, int baggagePerOne) { super(people, baggagePerOne); }
-    HSWagon(int people, int baggagePerOne, int comfort, int id) { super(people, baggagePerOne, comfort, id); }
+    HSWagon(int people, int baggagePerOne, int comfort, String id) { super(people, baggagePerOne, comfort, id); }
 }
 
 class ICWagon extends Wagon {
     ICWagon(int people, int baggagePerOne) { super(people, baggagePerOne); }
-    ICWagon(int people, int baggagePerOne, int comfort, int id) { super(people, baggagePerOne, comfort, id); }
+    ICWagon(int people, int baggagePerOne, int comfort, String id) { super(people, baggagePerOne, comfort, id); }
 }
 
 public class lab_6 {
     public static void main(String[] args) {
         Wagon[] PTWagons = {
-                new PTWagon(34, 20, 7, 1),
-                new PTWagon(20, 33, 8, 2),
-                new PTWagon(29, 27, 6, 3)
+                new PTWagon(34, 20),
+                new PTWagon(20, 33, 8, "Pirate"),
+                new PTWagon(29, 27, 6, "Wolf")
         };
 
         Wagon[] HSWagons = {
-                new HSWagon(18, 14, 8, 1),
-                new HSWagon(17, 13, 9, 2),
-                new HSWagon(23, 16, 8, 3)
+                new HSWagon(18, 14),
+                new HSWagon(17, 13, 9, "Wolf"),
+                new HSWagon(23, 16, 8, "Rose")
         };
 
         Wagon[] ICWagons = {
-                new ICWagon(34, 28, 4, 1),
-                new ICWagon(27, 33, 5, 2),
-                new ICWagon(31, 35, 4, 3)
+                new ICWagon(34, 28),
+                new ICWagon(27, 33, 5, "Cosmo"),
+                new ICWagon(31, 35, 4, "Disney")
         };
 
         System.out.println("__Base Passengers Train info__\nPassenger Train");

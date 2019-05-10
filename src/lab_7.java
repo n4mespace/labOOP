@@ -56,9 +56,8 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof DoubleLinkedList<?>.Node)) return false;
-            Node node = (Node) o;
-            return Objects.equals(getData(), node.getData());
+            if (!(o instanceof GrasslandTransport)) return false;
+            return o.equals(this.getData());
         }
 
         @Override
@@ -100,21 +99,18 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     public boolean contains(Object o)
             throws NullPointerException {
         if (this.isEmpty()) { throw new NullPointerException(); }
-        if (this.getHead().equals(o)) { return true; }
+
+        Node node = new Node((GrasslandTransport) o);
+        if (this.getHead().equals(node)) { return true; }
 
         Node next = head.getNext();
         while (next != null) {
-            if (next.equals(o)) { return true; }
+            if (next.equals(node)) { return true; }
             next = next.getNext();
         }
         return false;
     }
 
-    /**
-     * Returns an iterator over the elements in this list in proper sequence.
-     *
-     * @return an iterator over the elements in this list in proper sequence
-     */
     @NotNull
     @Override
     public Iterator<T> iterator() {
@@ -221,7 +217,8 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
         if (! this.contains(o)) { return false; }
 
         Node next = this.getHead();
-        while (! next.equals(o)) { next = next.getNext(); }
+        Node node = new Node((GrasslandTransport) o);
+        while (! next.equals(node)) { next = next.getNext(); }
 
         Node newNext = next.getNext();
         Node newPrev = next.getPrevious();
@@ -288,7 +285,6 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
         this.setSize(0);
     }
 
-    // TODO should delete which from DLL?
     @Override
     public T get(int index)
             throws IndexOutOfBoundsException {
@@ -297,9 +293,7 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
         Node which = this.getHead();
         for (int i = 0; i < index; ++i) { which = which.getNext(); }
 
-        // this.remove(which);
-
-        return (T) which;
+        return (T) which.getData();
     }
 
 
@@ -307,17 +301,22 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     public T set(int index, T element)
             throws IndexOutOfBoundsException {
         if (index > this.size()) { throw new IndexOutOfBoundsException(); }
-        if (index == this.size()) { this.add(element); }
+        if (index == this.size()) {
+            this.add(element);
+            return (T) this.getTail().getPrevious().getData();
+        }
 
         Node from = this.getHead();
-        for (int i = 0; i < index; ++i) { from = from.getNext(); }
+        for (int i = 1; i < index; ++i) { from = from.getNext(); }
 
         Node temp = this.getTail();
+        Node next = from.getNext();
         this.setTail(from);
         this.add(element);
 
-        this.getTail().setNext(from.getNext());
-        from.getNext().setPrevious(this.getTail());
+        this.getTail().setNext(next);
+        if (next != null)
+            next.setPrevious(this.getTail());
         this.setTail(temp);
 
         return (T) from.getData();
@@ -326,19 +325,7 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     @Override
     public void add(int index, T element)
             throws IndexOutOfBoundsException {
-        if (index > this.size()) { throw new IndexOutOfBoundsException(); }
-        if (index == this.size()) { this.add(element); }
-
-        Node where = this.getTail();
-        for (int i = 0; i < index; ++i) { where = where.getPrevious(); }
-
-        Node temp = this.getTail();
-        this.setTail(where);
-        this.add(element);
-
-        temp.setPrevious(where.getNext());
-        where.getNext().setNext(temp);
-        this.setTail(temp);
+        this.set(index+1, element);
     }
 
     @Override
@@ -362,7 +349,7 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     @Override
     public int lastIndexOf(Object o) {
         Node node = this.getTail();
-        for (int i = 0; i < this.size(); ++i) {
+        for (int i = this.size()-1; i >= 0; --i) {
             if (node.equals(o)) { return i; }
             node = node.getPrevious();
         }
@@ -439,24 +426,26 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
      */
     @NotNull
     @Override
-    public List<T> subList(int fromIndex, int toIndex)
+    public DoubleLinkedList<T> subList(int fromIndex, int toIndex)
             throws IndexOutOfBoundsException {
         if (fromIndex > toIndex && toIndex > this.size() && fromIndex < 0) {
             throw new IndexOutOfBoundsException();
         }
-
+        int size = toIndex - fromIndex;
         DoubleLinkedList<T> sublist = new DoubleLinkedList<>();
-        sublist.setHead( (Node) this.get(fromIndex) );
-        sublist.setTail( ((Node) this.get(toIndex)).getPrevious() );
 
-        int sublistSize = 0;
-        Node next = sublist.getHead();
-        while (! next.equals(sublist.getTail())) {
-            next = next.getNext();
-            ++sublistSize;
-        }
+        Node forHead = this.getHead();
+        for (int i = 0; i < fromIndex; ++i) forHead = forHead.getNext();
 
-        sublist.setSize(sublistSize);
+        Node forTail = this.getTail();
+        for (int i = this.size() - 1; i > this.size() - fromIndex - size; --i)  forTail = forTail.getPrevious();
+
+        sublist.setHead(forHead);
+        sublist.setTail(forTail);
+        sublist.getHead().setPrevious(null);
+        sublist.getTail().setNext(null);
+        sublist.setSize(size);
+
         return sublist;
     }
 
@@ -480,26 +469,26 @@ public class lab_7 {
     public static void main(String[] args) {
         // Create some objects from previous lab to manipulate with
         Wagon[] PTWagons = {
-                new PTWagon(34, 20, 7, 1),
-                new PTWagon(20, 33, 8, 2),
-                new PTWagon(29, 27, 6, 3)
+                new PTWagon(34, 20, 7, "A"),
+                new PTWagon(20, 33, 8, "B"),
+                new PTWagon(29, 27, 6, "C")
         };
 
         Wagon[] HSWagons = {
-                new HSWagon(18, 14, 8, 1),
-                new HSWagon(17, 13, 9, 2),
-                new HSWagon(23, 16, 8, 3)
+                new HSWagon(18, 14, 8, "D"),
+                new HSWagon(17, 13, 9, "E"),
+                new HSWagon(23, 16, 8, "F")
         };
 
         Wagon[] ICWagons = {
-                new ICWagon(34, 28, 4, 1),
-                new ICWagon(27, 33, 5, 2),
-                new ICWagon(31, 35, 4, 3)
+                new ICWagon(34, 28, 4, "G"),
+                new ICWagon(27, 33, 5, "T"),
+                new ICWagon(31, 35, 4, "P")
         };
 
         ArrayList<Train> trains = new ArrayList<>();
         trains.add(new PassengerTrain(PTWagons));
-        trains.add(new HighSpeedTrain(HSWagons));
+        //trains.add(new HighSpeedTrain(HSWagons));
         trains.add(new InterCityTrain(ICWagons));
 
         // Testing main class
@@ -507,9 +496,23 @@ public class lab_7 {
         DoubleLinkedList<Train> alone    = new DoubleLinkedList<>(new PassengerTrain(PTWagons));
         DoubleLinkedList<Train> fromList = new DoubleLinkedList<>(trains);
 
+        for (Train train : fromList) { System.out.println(train); }
+        System.out.println("<---------------->");
+
         fromList.add(1, new Train(HSWagons));
-        for (Train train : fromList) {
-            System.out.println(train);
-        }
+        for (Train train : fromList) { System.out.println(train); }
+
+        System.out.println("<---------------->");
+        fromList.add(1, new Train(ICWagons));
+
+        for (Train train : fromList) { System.out.println(train); }
+
+        System.out.println(fromList.indexOf(new Train(ICWagons)));
+        System.out.println(fromList.lastIndexOf(new Train(ICWagons)));
+        System.out.println(fromList.get(2).equals(new Train(ICWagons)));
+
+        System.out.println("<---------------->");
+        fromList = fromList.subList(1, 2);
+        for (Train train : fromList) { System.out.println(train); }
     }
 }
