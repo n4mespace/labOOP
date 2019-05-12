@@ -1,5 +1,4 @@
 import org.jetbrains.annotations.NotNull;
-
 import java.util.*;
 
 /**
@@ -19,25 +18,25 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     }
 
     public DoubleLinkedList(T someObj) {
-        this.head = new Node(someObj);
-        this.tail = this.head;
+        this.setHead(new Node(someObj));
+        this.setTail(this.getHead());
         this.size = 1;
     }
 
     public DoubleLinkedList(List<T> someList) {
         Node prev, next;
         prev = new Node((GrasslandTransport) someList.toArray()[0]);
-        this.head = prev;
-        this.size = someList.size();
+        this.setHead(prev);
+        this.setSize(someList.size());
 
-        for (T smth : someList.subList(1, this.size)) {
+        for (T smth : someList.subList(1, this.size())) {
             next = new Node(smth);
             prev.setNext(next);
             next.setPrevious(prev);
             prev = next;
         }
 
-        this.tail = prev;
+        this.setTail(prev);
     }
 
     private class Node {
@@ -65,21 +64,15 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
             return Objects.hash(getData());
         }
 
-        public void setNext(Node next) {
-            this.next = next;
-        }
+        public void setNext(Node next) { this.next = next; }
 
         public void setPrevious(Node previous) {
             this.previous = previous;
         }
 
-        public Node getNext() {
-            return this.next;
-        }
+        public Node getNext() { return this.next; }
 
-        public Node getPrevious() {
-            return this.previous;
-        }
+        public Node getPrevious() { return this.previous; }
 
         @Override
         public String toString() { return this.getData().toString(); }
@@ -99,13 +92,11 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     public boolean contains(Object o)
             throws NullPointerException {
         if (this.isEmpty()) { throw new NullPointerException(); }
-
-        Node node = new Node((GrasslandTransport) o);
-        if (this.getHead().equals(node)) { return true; }
+        if (this.getHead().getData().equals(o)) { return true; }
 
         Node next = head.getNext();
         while (next != null) {
-            if (next.equals(node)) { return true; }
+            if (next.getData().equals(o)) { return true; }
             next = next.getNext();
         }
         return false;
@@ -142,62 +133,30 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     @NotNull
     @Override
     public Object[] toArray() {
-        Node next = this.getHead().getNext();
+        Node next = this.getHead();
         Object[] arr = new Object[this.size()];
-        arr[0] = next;
-        int i = 1;
+        int i = 0;
 
         while (next != null) {
-            arr[i] = next.getNext();
+            arr[i] = next.getData();
             next = next.getNext();
             ++i;
         }
         return arr;
     }
 
-    /**
-     * Returns an array containing all of the elements in this list in
-     * proper sequence (from first to last element); the runtime type of
-     * the returned array is that of the specified array.  If the list fits
-     * in the specified array, it is returned therein.  Otherwise, a new
-     * array is allocated with the runtime type of the specified array and
-     * the size of this list.
-     *
-     * <p>If the list fits in the specified array with room to spare (i.e.,
-     * the array has more elements than the list), the element in the array
-     * immediately following the end of the list is set to {@code null}.
-     * (This is useful in determining the length of the list <i>only</i> if
-     * the caller knows that the list does not contain any null elements.)
-     *
-     * <p>Like the {@link #toArray()} method, this method acts as bridge between
-     * array-based and collection-based APIs.  Further, this method allows
-     * precise control over the runtime type of the output array, and may,
-     * under certain circumstances, be used to save allocation costs.
-     *
-     * <p>Suppose {@code x} is a list known to contain only strings.
-     * The following code can be used to dump the list into a newly
-     * allocated array of {@code String}:
-     *
-     * <pre>{@code
-     *     String[] y = x.toArray(new String[0]);
-     * }</pre>
-     * <p>
-     * Note that {@code toArray(new Object[0])} is identical in function to
-     * {@code toArray()}.
-     *
-     * @param a the array into which the elements of this list are to
-     *          be stored, if it is big enough; otherwise, a new array of the
-     *          same runtime type is allocated for this purpose.
-     * @return an array containing the elements of this list
-     * @throws ArrayStoreException  if the runtime type of the specified array
-     *                              is not a supertype of the runtime type of every element in
-     *                              this list
-     * @throws NullPointerException if the specified array is null
-     */
     @NotNull
     @Override
     public <T1> T1[] toArray(@NotNull T1[] a) {
-        return null;
+        if (!(a instanceof GrasslandTransport[])) throw new ArrayStoreException();
+        if (this.size() > a.length) { return  (T1[]) this.toArray(); }
+
+        int i = 0;
+        for (Object obj : this.toArray()) {
+            a[i] = (T1) obj;
+            ++i;
+        }
+        return a;
     }
 
     @Override
@@ -216,13 +175,27 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     public boolean remove(Object o) {
         if (! this.contains(o)) { return false; }
 
+        if (this.indexOf(o) == 0) {
+            this.setHead(this.getHead().getNext());
+            this.getHead().setPrevious(null);
+            this.setSize(this.size() - 1);
+            return true;
+        }
+        else if (this.lastIndexOf(o) == this.size()-1) {
+            this.setTail(this.getTail().getPrevious());
+            this.getTail().setNext(null);
+            this.setSize(this.size() - 1);
+            return true;
+        }
+
         Node next = this.getHead();
-        Node node = new Node((GrasslandTransport) o);
-        while (! next.equals(node)) { next = next.getNext(); }
+        while (! next.getData().equals(o)) { next = next.getNext(); }
 
         Node newNext = next.getNext();
         Node newPrev = next.getPrevious();
+
         newNext.setPrevious(newPrev);
+
         newPrev.setNext(newNext);
 
         this.setSize(this.size() - 1);
@@ -288,7 +261,7 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     @Override
     public T get(int index)
             throws IndexOutOfBoundsException {
-        if (index > this.size()) { throw new IndexOutOfBoundsException(); }
+        if (index >= this.size()) { throw new IndexOutOfBoundsException(); }
 
         Node which = this.getHead();
         for (int i = 0; i < index; ++i) { which = which.getNext(); }
@@ -338,9 +311,9 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
 
     @Override
     public int indexOf(Object o) {
-        Node node = this.head;
+        Node node = this.getHead();
         for (int i = 0; i < this.size(); ++i) {
-            if (node.equals(o)) { return i; }
+            if (node.getData().equals(o)) { return i; }
             node = node.getNext();
         }
         return -1;
@@ -350,80 +323,27 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     public int lastIndexOf(Object o) {
         Node node = this.getTail();
         for (int i = this.size()-1; i >= 0; --i) {
-            if (node.equals(o)) { return i; }
+            if (node.getData().equals(o)) { return i; }
             node = node.getPrevious();
         }
         return -1;
     }
 
-    /**
-     * Returns a list iterator over the elements in this list (in proper
-     * sequence).
-     *
-     * @return a list iterator over the elements in this list (in proper
-     * sequence)
-     */
     @NotNull
     @Override
     public ListIterator<T> listIterator() {
-        return null;
+        return (ListIterator<T>) this.iterator();
     }
 
-    /**
-     * Returns a list iterator over the elements in this list (in proper
-     * sequence), starting at the specified position in the list.
-     * The specified index indicates the first element that would be
-     * returned by an initial call to {@link ListIterator#next next}.
-     * An initial call to {@link ListIterator#previous previous} would
-     * return the element with the specified index minus one.
-     *
-     * @param index index of the first element to be returned from the
-     *              list iterator (by a call to {@link ListIterator#next next})
-     * @return a list iterator over the elements in this list (in proper
-     * sequence), starting at the specified position in the list
-     * @throws IndexOutOfBoundsException if the index is out of range
-     *                                   ({@code index < 0 || index > size()})
-     */
     @NotNull
     @Override
     public ListIterator<T> listIterator(int index) {
-        return null;
+        if (index < 0 || index > this.size()) throw new IndexOutOfBoundsException();
+        ListIterator<T> listIterator = this.listIterator();
+        for (int i = 0; i < index; ++i) listIterator.next();
+        return listIterator;
     }
 
-    /**
-     * Returns a view of the portion of this list between the specified
-     * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.  (If
-     * {@code fromIndex} and {@code toIndex} are equal, the returned list is
-     * empty.)  The returned list is backed by this list, so non-structural
-     * changes in the returned list are reflected in this list, and vice-versa.
-     * The returned list supports all of the optional list operations supported
-     * by this list.<p>
-     * <p>
-     * This method eliminates the need for explicit range operations (of
-     * the sort that commonly exist for arrays).  Any operation that expects
-     * a list can be used as a range operation by passing a subList view
-     * instead of a whole list.  For example, the following idiom
-     * removes a range of elements from a list:
-     * <pre>{@code
-     *      list.subList(from, to).clear();
-     * }</pre>
-     * Similar idioms may be constructed for {@code indexOf} and
-     * {@code lastIndexOf}, and all of the algorithms in the
-     * {@code Collections} class can be applied to a subList.<p>
-     * <p>
-     * The semantics of the list returned by this method become undefined if
-     * the backing list (i.e., this list) is <i>structurally modified</i> in
-     * any way other than via the returned list.  (Structural modifications are
-     * those that change the size of this list, or otherwise perturb it in such
-     * a fashion that iterations in progress may yield incorrect results.)
-     *
-     * @param fromIndex low endpoint (inclusive) of the subList
-     * @param toIndex   high endpoint (exclusive) of the subList
-     * @return a view of the specified range within this list
-     * @throws IndexOutOfBoundsException for an illegal endpoint index value
-     *                                   ({@code fromIndex < 0 || toIndex > size ||
-     *                                   fromIndex > toIndex})
-     */
     @NotNull
     @Override
     public DoubleLinkedList<T> subList(int fromIndex, int toIndex)
@@ -511,8 +431,14 @@ public class lab_7 {
         System.out.println(fromList.lastIndexOf(new Train(ICWagons)));
         System.out.println(fromList.get(2).equals(new Train(ICWagons)));
 
-        System.out.println("<---------------->");
-        fromList = fromList.subList(1, 2);
+        System.out.println("\n<---------------->");
+        fromList.remove(1);
+        fromList.remove(1);
         for (Train train : fromList) { System.out.println(train); }
+        System.out.println(fromList.size());
+
+        System.out.println("\n<---------------->");
+        Object[] newList = fromList.toArray();
+        for (Object obj : newList) { System.out.println(obj); }
     }
 }
