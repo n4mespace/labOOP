@@ -256,7 +256,6 @@ public class lab_6 {
             if (wagon != null ) System.out.println(wagon);
             else break;
         }
-
         System.out.println("__That's all for today__");
     }
 }
