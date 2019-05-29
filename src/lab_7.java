@@ -102,31 +102,32 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
         return false;
     }
 
+    private class DLLIterator implements Iterator {
+        Node current;
+
+        // initialize pointer to head of the list for iteration
+        public DLLIterator(DoubleLinkedList<T> list) {
+            current = list.getHead();
+        }
+
+        // returns false if next element does not exist
+        public boolean hasNext() {
+            return current != null;
+        }
+
+        // return current data and update pointer
+        public T next() {
+            T data = (T) current.getData();
+            current = current.getNext();
+            return data;
+        }
+
+        public void remove() {}
+    }
+
     @NotNull
     @Override
     public Iterator<T> iterator() {
-        class DLLIterator implements Iterator {
-            Node current;
-
-            // initialize pointer to head of the list for iteration
-            public DLLIterator(DoubleLinkedList<T> list) {
-                current = list.getHead();
-            }
-
-            // returns false if next element does not exist
-            public boolean hasNext() {
-                return current != null;
-            }
-
-            // return current data and update pointer
-            public T next() {
-                T data = (T) current.getData();
-                current = current.getNext();
-                return data;
-            }
-
-            public void remove() {}
-        }
         return new DLLIterator(this);
     }
 
@@ -161,6 +162,12 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
 
     @Override
     public boolean add(T t) {
+        if (this.isEmpty()) {
+            this.setHead(new Node(t));
+            this.setSize(1);
+            return true;
+        }
+
         Node newTail = (new Node(t));
 
         this.getTail().setNext(newTail);
@@ -175,13 +182,25 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     public boolean remove(Object o) {
         if (! this.contains(o)) { return false; }
 
+        if (this.size() == 1) {
+            this.getHead().setPrevious(null);
+            this.getHead().setNext(null);
+            this.getTail().setPrevious(null);
+            this.getTail().setNext(null);
+
+            this.setHead(null);
+            this.setTail(null);
+            this.setSize(0);
+            return true;
+        }
+
         if (this.indexOf(o) == 0) {
             this.setHead(this.getHead().getNext());
             this.getHead().setPrevious(null);
             this.setSize(this.size() - 1);
             return true;
         }
-        else if (this.lastIndexOf(o) == this.size()-1) {
+        if (this.lastIndexOf(o) == this.size()-1) {
             this.setTail(this.getTail().getPrevious());
             this.getTail().setNext(null);
             this.setSize(this.size() - 1);
@@ -226,7 +245,7 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
         for (int i = 0; i < index; ++i) { from = from.getNext(); }
 
         Node temp = this.getTail();
-        this.setTail(from);
+        this.setTail(from.getPrevious());
         this.addAll(c);
 
         this.getTail().setNext(temp);
@@ -239,7 +258,7 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     @Override
     public boolean removeAll(@NotNull Collection<?> c) {
         for (Object obj : c) {
-            if (! this.remove(obj)) { return false; }
+            if (obj == null) break;
             this.remove(obj);
         }
         return true;
@@ -247,7 +266,11 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
 
     @Override
     public boolean retainAll(@NotNull Collection<?> c) {
-        for (Object obj : c) { this.remove(obj); }
+        for (Object t : this.toArray()) {
+            if (! c.contains(t))
+                this.remove(t);
+        }
+
         return true;
     }
 
@@ -269,7 +292,6 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
         return (T) which.getData();
     }
 
-
     @Override
     public T set(int index, T element)
             throws IndexOutOfBoundsException {
@@ -277,6 +299,15 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
         if (index == this.size()) {
             this.add(element);
             return (T) this.getTail().getPrevious().getData();
+        }
+        if (index == 0) {
+            Node oldHead = this.getHead();
+            this.setHead(new Node(element));
+            this.getHead().setNext(oldHead);
+            oldHead.setPrevious(this.getHead());
+
+            this.setSize(this.size() + 1);
+            return (T) this.getHead().getData();
         }
 
         Node from = this.getHead();
@@ -332,7 +363,62 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     @NotNull
     @Override
     public ListIterator<T> listIterator() {
-        return (ListIterator<T>) this.iterator();
+        return new DLLlistIterator(this);
+    }
+
+    private class DLLlistIterator implements ListIterator<T> {
+        Node head;
+        Node tail;
+        boolean headWasMoved = false;
+
+        public DLLlistIterator(DoubleLinkedList<T> list) {
+            head = list.getHead();
+            tail = head.getPrevious();
+        }
+
+        public boolean hasNext() {
+            return head.getNext() != null;
+        }
+
+        public T next() {
+            head = head.getNext();
+            headWasMoved = !headWasMoved;
+            return (T) head.getData();
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return tail != null;
+        }
+
+        @Override
+        public T previous() {
+            tail = tail.getPrevious();
+            headWasMoved = false;
+            return (T) tail.getData();
+        }
+
+        @Override
+        public int nextIndex() {
+            return 0;
+        }
+
+        @Override
+        public int previousIndex() {
+            return 0;
+        }
+
+        @Override
+        public void remove() {
+        }
+
+        @Override
+        public void set(T t) {
+        }
+
+        @Override
+        public void add(T t) {
+        }
     }
 
     @NotNull
@@ -440,5 +526,12 @@ public class lab_7 {
         System.out.println("\n<---------------->");
         Object[] newList = fromList.toArray();
         for (Object obj : newList) { System.out.println(obj); }
+
+        System.out.println("\n<---------------->");
+        GrasslandTransport[] l = new GrasslandTransport[2];
+        GrasslandTransport[] n = fromList.toArray(l);
+        for (GrasslandTransport i : n) {
+            System.out.println(i);
+        }
     }
 }
