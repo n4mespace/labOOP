@@ -363,61 +363,63 @@ class DoubleLinkedList<T extends GrasslandTransport> implements List<T> {
     @NotNull
     @Override
     public ListIterator<T> listIterator() {
-        return new DLLlistIterator(this);
+        return new DLLlistIterator();
     }
 
     private class DLLlistIterator implements ListIterator<T> {
-        Node head;
-        Node tail;
-        boolean headWasMoved = false;
 
-        public DLLlistIterator(DoubleLinkedList<T> list) {
-            head = list.getHead();
-            tail = head.getPrevious();
-        }
-
+        @Override
         public boolean hasNext() {
-            return head.getNext() != null;
+            return getHead().getNext() != null;
         }
 
+        @Override
         public T next() {
-            head = head.getNext();
-            headWasMoved = !headWasMoved;
+            if (! this.hasNext()) throw new NoSuchElementException();
+            head = getHead().getNext();
             return (T) head.getData();
         }
 
         @Override
         public boolean hasPrevious() {
-            return tail != null;
+            return getHead().getPrevious() != null;
         }
 
         @Override
         public T previous() {
-            tail = tail.getPrevious();
-            headWasMoved = false;
-            return (T) tail.getData();
+            if (! this.hasPrevious()) throw new NoSuchElementException();
+            head = head.getPrevious();
+            return (T) head.getData();
         }
 
         @Override
         public int nextIndex() {
-            return 0;
+            if (! this.hasNext()) return size();
+            return indexOf(getHead().getNext().getData());
         }
 
         @Override
         public int previousIndex() {
-            return 0;
+            if (! this.hasPrevious()) return -1;
+            return indexOf(getHead().getPrevious());
         }
 
         @Override
         public void remove() {
+            DoubleLinkedList.this.remove(getHead());
         }
 
         @Override
         public void set(T t) {
+            int index = indexOf(head);
+            this.remove();
+            DoubleLinkedList.this.set(index, t);
         }
 
         @Override
         public void add(T t) {
+            int index = indexOf(head) + 1;
+            DoubleLinkedList.this.set(index, t);
         }
     }
 
