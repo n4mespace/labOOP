@@ -2,8 +2,8 @@ import org.junit.jupiter.api.Assertions;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.ListIterator;
 
-//TODO check with my exception
 class myException extends Exception {
     public myException() {
         super("My Exception has been discovered!");
@@ -248,12 +248,23 @@ class DoubleLinkedListTest {
 
     @org.junit.jupiter.api.Test
     void listIterator() {
+        ListIterator<Train> iterator = fromList.listIterator();
+        Assertions.assertEquals(iterator.next(), fromList.get(0));
+        Assertions.assertEquals(iterator.nextIndex(), 1);
 
+        System.out.println("  listIterator() -> OK");
     }
 
     @org.junit.jupiter.api.Test
     void listIterator1() {
+        // Change the initial collection!
+        ListIterator<Train> iterator = fromList.listIterator(1);
 
+        Assertions.assertEquals(iterator.next(), fromList.get(0));
+        Assertions.assertFalse(iterator.hasNext());
+        Assertions.assertEquals(iterator.nextIndex(), 3);
+
+        System.out.println("  listIterator1() -> OK");
     }
 
     @org.junit.jupiter.api.Test
